@@ -19,14 +19,33 @@ if sys.argv[1] == "move":
         if sys.argv[2]=="-i":
             for node_ex in sys.argv[3:]:
                 print(f"DEBUG: the compiled node '{node_ex}' is going to replace the '/dev/sda/cazzi/{node_ex}'")
-                os.replace(node_ex, f"/home/lorenzo/{node_ex}")
+                if os.path.exists(f"/home/lorenzo/{node_ex}"):
+                    os.replace(node_ex, f"/home/lorenzo/{node_ex}")
+                else:
+                    print("CONFIRM: the destination compiled node does not exists, do you want to add it anyway? (y/n)")
+                    flag=input()
+                    if flag=="y":
+                        os.replace(node_ex, f"/home/lorenzo/{node_ex}")
+                    elif flag!="n":
+                        print("ERROR: Invalid input")
+                        exit(2)
+
         # std command
         else:
             for node_ex in sys.argv[2:]:
                 print(f"CONFIRM: the compiled node '{node_ex}' is going to replace the '/dev/sda/cazzi/{node_ex}' (y/n)")
                 flag=input()
                 if flag=="y":
-                    os.replace(node_ex, f"/home/lorenzo/{node_ex}")
+                    if os.path.exists(f"/home/lorenzo/{node_ex}"):
+                        os.replace(node_ex, f"/home/lorenzo/{node_ex}")
+                    else:
+                        print("CONFIRM: the destination compiled node does not exists, do you want to add it anyway? (y/n)")
+                        flag=input()
+                        if flag=="y":
+                            os.replace(node_ex, f"/home/lorenzo/{node_ex}")
+                        elif flag!="n":
+                            print("ERROR: Invalid input")
+                            exit(2)
                 elif flag!="n":
                     print("ERROR: Invalid input")
                     exit(2)
