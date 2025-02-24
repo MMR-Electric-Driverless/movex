@@ -69,35 +69,48 @@ def expand(args):
 
 #TO-DO:
 #   - understand the right destination inside the repository:
-#       * launch -> ./src/<section>/<node_name>/launch/<node_name>_launch.py
-#       * yaml   -> ./src/<section>/<node_name>/config/<node_name>_conf.yaml
-#       * bin    ->
+#       * launch -> /usr/share/<node_name>/launch/<node_name>_launch.py
+#       * yaml   -> /usr/share/<node_name>/config/<node_name>_conf.yaml
+#       * bin    -> /usr/lib/<node_name>/
 
 def move(args):
     dict = getArgumentsAsDict(args)
     print(dict)
     src = dict['src_path']
 
+    dst = checkIfArgumentIsPassed('dst_path', 'm', args)
+    dst_path = os.path.join(dst, "usr")
     
+    if (os.path.exists(dst_path)):
+        output = subprocess.run(['find',  '..',  '-name', src], stdout=subprocess.PIPE)
+        results = output.stdout.decode('utf-8').split('\n')
+        
+        #print(results[0])
+        src_path = results[0]
+        src_path_config = os.path.join(src_path, "config")
+        src_path_launch = os.path.join(src_path, "launch")
+        src_path_bin = os.path.join("..", "build", src)
 
-    if (os.path.exists(src)):
-        dst = checkIfArgumentIsPassed('dst_path', 'm', args)
-        #dst = ''.join((dst, f"/usr/share/canbus_bridge"))
-        #dst = os.path.join(dst, "usr", "share", "canbus_bridge")
+        dst_path_config = os.path.join(dst_path, "share", src, "config")
+        dst_path_launch = os.path.join(dst_path, "share", src, "launch")
+        dst_path_bin = os.path.join(dst_path, "lib", src)
+        
         if (dict['f'] is True) :
             print(f"DEBUG: Do you want that {src} is going to replace the {dst}? (y/n)")
             flag=input().lower()
             if flag=="y":
-                #subprocess.run(['sudo', 'chmod', '-R', 'a+rw', dst])
-                shutil.rmtree(dst)
-                shutil.copytree(src, dst, dirs_exist_ok=True)
+                #shutil.rmtree(dst)
+                shutil.copytree(src_path_config, dst_path_config, dirs_exist_ok=True)
+                shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
+                shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
             elif flag!="n":
                 print("ERROR: Invalid input")
                 exit(2)
         else:
-            #subprocess.run(['sudo', 'chmod', '-R', 'a+rwx', dst])
-            shutil.rmtree(dst)
-            shutil.copytree(src, dst, dirs_exist_ok=True)
+            #shutil.rmtree(dst)
+            shutil.copytree(src_path_config, dst_path_config, dirs_exist_ok=True)
+            shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
+            shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
     else:
         print(f"ERROR: {dict['src_path']} doesn't exists!")
         exit(-1)
