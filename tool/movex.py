@@ -76,19 +76,19 @@ def expand(args):
 def move(args):
     dict = getArgumentsAsDict(args)
     print(dict)
-    src = dict['src_path']
+    src = dict['src']
 
     dst = checkIfArgumentIsPassed('dst_path', 'm', args)
     dst_path = os.path.join(dst, "usr")
-    
+    print(dst) 
     if (os.path.exists(dst_path)):
         output = subprocess.run(['find',  '..',  '-name', src], stdout=subprocess.PIPE)
         results = output.stdout.decode('utf-8').split('\n')
         
         #print(results[0])
-        src_path = results[0]
-        src_path_config = os.path.join(src_path, "config")
-        src_path_launch = os.path.join(src_path, "launch")
+        src = results[0]
+        src_path_config = os.path.join(src, "config")
+        src_path_launch = os.path.join(src, "launch")
         src_path_bin = os.path.join("..", "build", src)
 
         dst_path_config = os.path.join(dst_path, "share", src, "config")
@@ -112,7 +112,7 @@ def move(args):
             shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
             shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
     else:
-        print(f"ERROR: {dict['src_path']} doesn't exists!")
+        print(f"ERROR: {dict['src']} doesn't exists!")
         exit(-1)
 
 def main():
@@ -121,7 +121,7 @@ def main():
 
     parser_move = subparsers.add_parser('move', help ='move the ros node to the file system')
     parser_move.add_argument("-f", help='do not ask for confirmation', action="store_true")
-    parser_move.add_argument('src_path', type=str)
+    parser_move.add_argument('src', type=str)
     parser_move.add_argument('dst_path', type=str, nargs='?', default=None)
     parser_move.set_defaults(func=move)
 
