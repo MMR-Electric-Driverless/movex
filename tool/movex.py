@@ -120,9 +120,9 @@ def main():
     subparsers = parser.add_subparsers(required=True)
 
     parser_move = subparsers.add_parser('move', help ='move the ros node to the file system')
-    parser_move.add_argument("-f", help='do not ask for confirmation', action="store_true")
-    parser_move.add_argument('src', type=str)
-    parser_move.add_argument('dst_path', type=str, nargs='?', default=None)
+    parser_move.add_argument("-f", help='do not ask for confirmation', action='store_true')
+    parser_move.add_argument('src', type=str, help='name of the package to move')
+    parser_move.add_argument('dst_path', type=str, nargs='?', default=None, help='absolute path of the device (if already known)')
     parser_move.set_defaults(func=move)
 
     parser_expand = subparsers.add_parser('expand', help='expand the partition to maximize the device size')
