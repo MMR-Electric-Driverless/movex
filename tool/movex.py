@@ -5,10 +5,6 @@ import argparse
 import subprocess
 from simple_term_menu import TerminalMenu
 
-# the command has a sub instruction (move or expand)
-# move <executable file> ... --> it takes the name/s of the ros nodes' executable file/s to replace in the file system
-# move -f --> do not ask for confirmation
-
 # expand:
 # IMPORTANT: upgrade e2fsck -> https://askubuntu.com/questions/1497523/feature-c12-e2fsck-get-a-newer-version-of-e2fsck
 # growpart -> sudo apt install cloud-guest-utils
@@ -57,8 +53,25 @@ def checkIfArgumentIsPassed(path, specifier, args):
 def getArgumentsAsDict(args):
     return vars(args)
 
+def keepOnlyLatestConfigFiles(src_dir, dst_dir):
+    with os.scandir(src_dir) as src_entry, os.scandir(dst_dir) as dst_entry:
+        for src_item in src_entry:
+            if not src_item.name.startswith('.') and src_item.is_file():
+                for dst_item in dst_entry:
+                    if dst_item.is_file() and src_item.name == dst_item.name:
+                        diff = subprocess.run(['diff', '-c', src_item.path, dst_item.path], stdout=subprocess.PIPE)
+                        if diff.returncode == 0:
+                            print(f"The src {src_item.name} is equal to the dst")
+                        else:
+                            print(f"ATTENTION: the dst {dst_item.name} is different from the src, you are going to lose data!!!")
+                            print(diff.stdout.decode('utf-8'))
+                            print(f"DEBUG: Do you want to replace it anyway? (y/n)")
+                            flag=input().lower()
+                            if flag=="y":
+                                shutil.copy(src_item.path, dst_item.path)
+                        
 
-def expand(args):
+def expand(args): 
     device = checkIfArgumentIsPassed('dev_path', 'n', args)
 
     subprocess.run(['umount', device])
@@ -66,51 +79,48 @@ def expand(args):
     subprocess.run(['sudo', 'growpart', device[:-1], device[-1]])
     subprocess.run(['sudo', 'resize2fs', '-f', device])
     
-
-#TO-DO:
-#   - understand the right destination inside the repository:
 #       * launch -> /usr/share/<node_name>/launch/<node_name>_launch.py
 #       * yaml   -> /usr/share/<node_name>/config/<node_name>_conf.yaml
 #       * bin    -> /usr/lib/<node_name>/
 
 def move(args):
     dict = getArgumentsAsDict(args)
-    print(dict)
+    #print(dict)
     src = dict['src']
 
     dst = checkIfArgumentIsPassed('dst_path', 'm', args)
     dst_path = os.path.join(dst, "usr")
-    print(dst) 
+    #print(src) 
     if (os.path.exists(dst_path)):
         output = subprocess.run(['find',  '..',  '-name', src], stdout=subprocess.PIPE)
         results = output.stdout.decode('utf-8').split('\n')
         
         #print(results[0])
-        src = results[0]
-        src_path_config = os.path.join(src, "config")
-        src_path_launch = os.path.join(src, "launch")
+        src_path = results[0]
+
+        src_path_config = os.path.join(src_path, "config")
+        src_path_launch = os.path.join(src_path, "launch")
         src_path_bin = os.path.join("..", "build", src)
 
         dst_path_config = os.path.join(dst_path, "share", src, "config")
+
         dst_path_launch = os.path.join(dst_path, "share", src, "launch")
         dst_path_bin = os.path.join(dst_path, "lib", src)
-        
-        if (dict['f'] is True) :
+
+        if (dict['f'] is True):
             print(f"DEBUG: Do you want that {src} is going to replace the {dst}? (y/n)")
             flag=input().lower()
             if flag=="y":
-                #shutil.rmtree(dst)
-                shutil.copytree(src_path_config, dst_path_config, dirs_exist_ok=True)
-                shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
                 shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
-            elif flag!="n":
+                shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
+                keepOnlyLatestConfigFiles(src_path_config, dst_path_config)
+            elif flag!="y":
                 print("ERROR: Invalid input")
                 exit(2)
         else:
-            #shutil.rmtree(dst)
-            shutil.copytree(src_path_config, dst_path_config, dirs_exist_ok=True)
-            shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
             shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
+            shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
+            keepOnlyLatestConfigFiles(src_path_config, dst_path_config)
     else:
         print(f"ERROR: {dict['src']} doesn't exists!")
         exit(-1)
