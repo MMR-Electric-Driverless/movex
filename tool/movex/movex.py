@@ -90,7 +90,6 @@ def move(args):
     #print(dict)
     src = dict['package']  # TODO: change name into package
     src_path = dict['src_path']
-
     dst = checkIfArgumentIsPassed('dst_path', 'm', args)
     dst_path = os.path.join(dst, "usr")
     #print(src) 
@@ -99,17 +98,20 @@ def move(args):
         output = subprocess.run(['find',  src_path,  '-name', src], stdout=subprocess.PIPE)
         results = output.stdout.decode('utf-8').split('\n')
         
-        #print(results[0])
-        src_path = results[0]
+        src_path_node = results[0]
 
-        src_path_config = os.path.join(src_path, "config")
-        src_path_launch = os.path.join(src_path, "launch")
-        src_path_bin = os.path.join("..", BUILD_BASE, src)
+        src_path_config = os.path.join(src_path_node, "config")
+        src_path_launch = os.path.join(src_path_node, "launch")
+        #src_path_bin = os.path.join("..", BUILD_BASE, src)
+        src_path_bin = os.path.join(src_path, BUILD_BASE, src)
 
         dst_path_config = os.path.join(dst_path, "share", src, "config")
 
         dst_path_launch = os.path.join(dst_path, "share", src, "launch")
         dst_path_bin = os.path.join(dst_path, "lib", src)
+
+        print(src_path_bin)
+        print(dst_path_bin)
 
         if (dict['f'] is True):
             print(f"DEBUG: Do you want that {src} is going to replace the {dst}? (y/n)")
@@ -148,7 +150,7 @@ def main():
     parser_expand.set_defaults(func=expand)
 
     parser_build = subparsers.add_parser('build', help='Cross compile for arm64 target')
-    parser_move.add_argument('src_path', type=str, help='Path of development directory (directory that CONTAINS src)')
+    parser_build.add_argument('src_path', type=str, help='Path of development directory (directory that CONTAINS src)')
     parser_build.set_defaults(func=invoke_build)
     
     
