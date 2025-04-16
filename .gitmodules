@@ -1,0 +1,3 @@
+[submodule "tool/mmr-cross-compilation"]
+	path = tool/mmr-cross-compilation
+	url = https://github.com/doclorenzo/mmr-cross-compilation
