@@ -128,7 +128,7 @@ def move(args):
             shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
             keepOnlyLatestConfigFiles(src_path_config, dst_path_config)
     else:
-        print(f"ERROR: {dict['src']} doesn't exists!")
+        print(f"ERROR: {dst_path} doesn't exists!")
         exit(-1)
 
 def invoke_build(args):
