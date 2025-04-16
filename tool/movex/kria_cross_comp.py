@@ -30,6 +30,7 @@ class DisposableContainer:
   def run_async(self, cmd: str) -> int:
     if not self._container: raise RuntimeError("Container not initialized")
 
+    print(f"Running \"{cmd}\"...")
     client = APIClient()
     exec_handle = client.exec_create(self._container.id, cmd)
     stream = client.exec_start(exec_handle, stream=True)
@@ -53,8 +54,8 @@ class BuildDisposableContainer(DisposableContainer):
       self._client.images.get(IMAGE)
     except docker.errors.ImageNotFound:
       print(f'Downloading container {IMAGE}')
-      self._client.api.pull(IMAGE, stream=True, decode=True)
-      print('Done!\n')
+      self._client.api.pull(IMAGE, stream=False)
+      print('Done!')
     
     src_folder = Mount(self.SRC_DIR, self.__folder, type='bind')
     self._container = self._client.containers.run(
@@ -70,10 +71,11 @@ class BuildDisposableContainer(DisposableContainer):
 
 def build(src_folder):
   with BuildDisposableContainer(src_folder) as container:
-    container.run_async("apt update")
     cmd = "/bin/bash -c \"source /opt/ros/humble/setup.bash && {command}\""
     cmd1 = cmd.format(command="rosdep install --from-paths src --rosdistro humble --ignore-src -y --skip-keys 'fastcdr rti-connext-dds-6.0.1 urdfdom_headers' -r")
     cmd2 = cmd.format(command="colcon build --continue-on-error --symlink-install --build-base build_arm64 --install-base install_arm64 --packages-up-to canopen_bridge canbus_bridge")
+    
+    container.run_async("apt update")
     container.run_async(cmd1)
     container.run_async(cmd2)
 
