@@ -11,10 +11,14 @@ from config import *
 # IMPORTANT: upgrade e2fsck -> https://askubuntu.com/questions/1497523/feature-c12-e2fsck-get-a-newer-version-of-e2fsck
 # growpart -> sudo apt install cloud-guest-utils
 
+#       * launch -> /usr/share/<node_name>/launch/<node_name>_launch.py
+#       * yaml   -> /usr/share/<node_name>/config/<node_name>_conf.yaml
+#       * bin    -> /usr/lib/<node_name>/
+
 # specifier: 
 #           n -> name
 #           m -> mountpoints
-def chooseDevice(specifier):
+def choose_device(specifier):
     options = {'n': 0, 'm': 2}
     index = options[specifier]
 
@@ -41,21 +45,17 @@ def chooseDevice(specifier):
         exit(2)
 
 
-def checkIfArgumentIsPassed(path, specifier, args):
-    dict = getArgumentsAsDict(args)
-    if (dict[path] is None or not(os.path.exists(dict[path]))):
-        device = chooseDevice(specifier)
+def check_if_argument_is_passed(path, specifier, args):
+    path = args.path
+    if path is None or not(os.path.exists(path)):
+        device = choose_device(specifier)
     else:
-        if (os.path.exists(dict[path])):
-            device = dict[path]
+        if os.path.exists(path):
+            device = path
 
     return device
 
-
-def getArgumentsAsDict(args):  # TODO: davvero necessaria?
-    return vars(args)
-
-def keepOnlyLatestConfigFiles(src_dir, dst_dir):
+def keep_latest_config_files(src_dir, dst_dir):
     with os.scandir(src_dir) as src_entry, os.scandir(dst_dir) as dst_entry:
         for src_item in src_entry:
             if not src_item.name.startswith('.') and src_item.is_file():
@@ -74,75 +74,71 @@ def keepOnlyLatestConfigFiles(src_dir, dst_dir):
                         
 
 def expand(args): 
-    device = checkIfArgumentIsPassed('dev_path', 'n', args)
+    device = check_if_argument_is_passed('dev_path', 'n', args)
 
     subprocess.run(['umount', device])
     subprocess.run(['sudo', 'e2fsck', '-f', device])
     subprocess.run(['sudo', 'growpart', device[:-1], device[-1]])
     subprocess.run(['sudo', 'resize2fs', '-f', device])
-    
-#       * launch -> /usr/share/<node_name>/launch/<node_name>_launch.py
-#       * yaml   -> /usr/share/<node_name>/config/<node_name>_conf.yaml
-#       * bin    -> /usr/lib/<node_name>/
 
 def move(args):
-    dict = getArgumentsAsDict(args) # TODO: Change name of dict into arg_dict
-    #print(dict)
-    src = dict['package']  # TODO: change name into package
-    src_path = dict['src_path']
-    dst = checkIfArgumentIsPassed('dst_path', 'm', args)
+    package = args.package
+    src_path = args.src_path
+    force = args.f
+
+    print(f"Move no longer compiles nodes before moving them... have you compiled {package}...")
+    dst = check_if_argument_is_passed('dst_path', 'm', args)
     dst_path = os.path.join(dst, "usr")
-    #print(src) 
+
     if (os.path.exists(dst_path)):
-        build(src_path)
-        output = subprocess.run(['find',  src_path,  '-name', src], stdout=subprocess.PIPE)
+        output = subprocess.run(['find',  src_path,  '-name', package], stdout=subprocess.PIPE)
         results = output.stdout.decode('utf-8').split('\n')
         
         src_path_node = results[0]
 
         src_path_config = os.path.join(src_path_node, "config")
-        src_path_launch = os.path.join(src_path_node, "launch")
-        #src_path_bin = os.path.join("..", BUILD_BASE, src)
-        src_path_bin = os.path.join(src_path, BUILD_BASE, src)
+        src_path_launch = os.path.join(src_path, "install_arm64", package, "share", package, "launch")
+        src_path_bin = os.path.join(src_path, BUILD_BASE, package)
 
-        dst_path_config = os.path.join(dst_path, "share", src, "config")
+        dst_path_config = os.path.join(dst_path, "share", package, "config")
 
-        dst_path_launch = os.path.join(dst_path, "share", src, "launch")
-        dst_path_bin = os.path.join(dst_path, "lib", src)
+        dst_path_launch = os.path.join(dst_path, "share", package, "launch")
+        dst_path_bin = os.path.join(dst_path, "lib", package)
 
         print(src_path_bin)
         print(dst_path_bin)
 
-        if (dict['f'] is True):
-            print(f"DEBUG: Do you want that {src} is going to replace the {dst}? (y/n)")
-            flag=input().lower()
+        if not force:
+            print(f"DEBUG: Do you want that {package} is going to replace the {dst}? (y/n)")
+            flag = input().lower()
             if flag=="y":
                 shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
                 shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
-                keepOnlyLatestConfigFiles(src_path_config, dst_path_config)
+                keep_latest_config_files(src_path_config, dst_path_config)
             elif flag!="y":
                 print("ERROR: Invalid input")
                 exit(2)
         else:
             shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
             shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
-            keepOnlyLatestConfigFiles(src_path_config, dst_path_config)
+            keep_latest_config_files(src_path_config, dst_path_config)
     else:
         print(f"ERROR: {dst_path} doesn't exists!")
         exit(-1)
 
 def invoke_build(args):
-    build(args.src_path)
+    build(args.src_path, args.package)
+
 
 def main():
     parser = argparse.ArgumentParser(prog='movex')
     subparsers = parser.add_subparsers(required=True)
 
-    parser_move = subparsers.add_parser('move', help ='move the ros node to the file system')
-    parser_move.add_argument("-f", help='do not ask for confirmation', action='store_true')
-    parser_move.add_argument('package', type=str, help='name of the package to move')
-    parser_move.add_argument('src_path', type=str, help='Path of development directory (directory that CONTAINS src)')
-    parser_move.add_argument('dst_path', type=str, nargs='?', default=None, help='absolute path of the device (if already known)')
+    parser_move = subparsers.add_parser('move', help ='Move the ros node to the file system')
+    parser_move.add_argument("-f", help='Do not ask for confirmation', action='store_true')
+    parser_move.add_argument('package', type=str, help='Name of the package to move')
+    parser_move.add_argument('src_path', type=str, help='Absolute path of development directory (directory that CONTAINS src)')
+    parser_move.add_argument('dst_path', type=str, nargs='?', default=None, help='Path of the target storage (if already known)')
     parser_move.set_defaults(func=move)
 
     parser_expand = subparsers.add_parser('expand', help='expand the partition to maximize the device size')
@@ -151,6 +147,7 @@ def main():
 
     parser_build = subparsers.add_parser('build', help='Cross compile for arm64 target')
     parser_build.add_argument('src_path', type=str, help='Path of development directory (directory that CONTAINS src)')
+    parser_build.add_argument('package', type=str, help='Name of the package to move')
     parser_build.set_defaults(func=invoke_build)
     
     
