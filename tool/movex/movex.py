@@ -3,6 +3,7 @@ import os
 import shutil
 import argparse
 import subprocess
+from filecmp import dircmp
 from simple_term_menu import TerminalMenu
 from kria_cross_comp import build
 from config import *
@@ -36,7 +37,7 @@ def choose_device(specifier):
 
     #print(device)
 
-    print(f"CONFIRM: Do you want to select the partition '{device[0]}'? (y/n)")
+    print(f"CONFIRM: Do you want to select the partition '{device[0]}'? (y/n)", end=' ', flush=True)
     flag=input().lower()
     if flag=="y":
         print(f"You have selected the device '{device[0]}'")
@@ -55,23 +56,25 @@ def check_if_argument_is_passed(path, specifier, args):
 
     return device
 
-def keep_latest_config_files(src_dir, dst_dir):
-    with os.scandir(src_dir) as src_entry, os.scandir(dst_dir) as dst_entry:
-        for src_item in src_entry:
-            if not src_item.name.startswith('.') and src_item.is_file():
-                for dst_item in dst_entry:
-                    if dst_item.is_file() and src_item.name == dst_item.name:
-                        diff = subprocess.run(['diff', '-c', src_item.path, dst_item.path], stdout=subprocess.PIPE)
-                        if diff.returncode == 0:
-                            print(f"The src {src_item.name} is equal to the dst")
-                        else:
-                            print(f"ATTENTION: the dst {dst_item.name} is different from the src, you are going to lose data!!!")
-                            print(diff.stdout.decode('utf-8'))
-                            print(f"DEBUG: Do you want to replace it anyway? (y/n)")
-                            flag=input().lower()
-                            if flag=="y":
-                                shutil.copy(src_item.path, dst_item.path)
-                        
+def copy_config(src_dir, dst_dir):
+    """Copy config file(s). Confirmation is prompted before overwriting.
+    """
+    config_files_cmp = dircmp(src_dir, dst_dir, shallow=False)
+    common_files = config_files_cmp.same_files
+    if common_files: print(f"[DEBUG] Found identical files: {common_files}")
+
+    for diff_file in config_files_cmp.diff_files:
+        print(f'[ATTENTION] "{diff_file}" differs, Do you want to replace it anyway? (y/n)', end=' ', flush=True)
+        flag=input().lower()
+        if flag=="y":
+            src_file, dst_file = os.path.join(src_dir, diff_file), os.path.join(dst_dir, diff_file)
+            shutil.copy(src_file, dst_file)
+            print(f"[DEBUG] Overwritten file: {diff_file}")
+    
+    for left_file in config_files_cmp.left_only:
+        src_file, dst_file = os.path.join(src_dir, left_file), os.path.join(dst_dir, left_file)
+        shutil.copy(src_file, dst_file)
+        print(f"[DEBUG] Copyied src-only files: {left_file}")                        
 
 def expand(args): 
     device = check_if_argument_is_passed('dev_path', 'n', args)
@@ -105,12 +108,12 @@ def move(args):
         print(src_path_bin)
         print(dst_path_bin)
 
-        print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)")
+        print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)", end=' ', flush=True)
         flag = input().lower()
         if flag=="y":
             shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
             shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
-            keep_latest_config_files(src_path_config, dst_path_config)
+            copy_config(src_path_config, dst_path_config)
         elif flag!="y":
             print("ERROR: Invalid input")
             exit(2)
