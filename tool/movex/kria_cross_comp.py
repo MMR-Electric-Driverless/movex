@@ -73,7 +73,7 @@ def build(src_folder, package):
   with BuildDisposableContainer(src_folder) as container:
     cmd = "/bin/bash -c \"source /opt/ros/humble/setup.bash && {command}\""
     cmd1 = cmd.format(command="rosdep install --from-paths src --rosdistro humble --ignore-src -y --skip-keys 'fastcdr rti-connext-dds-6.0.1 urdfdom_headers' -r")
-    cmd2 = cmd.format(command=f"colcon build --continue-on-error --symlink-install --build-base build_arm64 --install-base install_arm64 --packages-up-to {package}")
+    cmd2 = cmd.format(command=f"colcon build --continue-on-error --build-base build_arm64 --install-base install_arm64 --packages-up-to {package}")
     
     container.run_async("apt update")
     container.run_async(cmd1)

@@ -46,7 +46,7 @@ def choose_device(specifier):
 
 
 def check_if_argument_is_passed(path, specifier, args):
-    path = args.path
+    path = args.dst_path
     if path is None or not(os.path.exists(path)):
         device = choose_device(specifier)
     else:
@@ -94,9 +94,7 @@ def move(args):
         output = subprocess.run(['find',  src_path,  '-name', package], stdout=subprocess.PIPE)
         results = output.stdout.decode('utf-8').split('\n')
         
-        src_path_node = results[0]
-
-        src_path_config = os.path.join(src_path_node, "config")
+        src_path_config = os.path.join(src_path, "install_arm64", package, "share", package, "config")
         src_path_launch = os.path.join(src_path, "install_arm64", package, "share", package, "launch")
         src_path_bin = os.path.join(src_path, BUILD_BASE, package)
 
