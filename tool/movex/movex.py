@@ -84,7 +84,6 @@ def expand(args):
 def move(args):
     package = args.package
     src_path = args.src_path
-    force = args.f
 
     print(f"Move no longer compiles nodes before moving them... have you compiled {package}...")
     dst = check_if_argument_is_passed('dst_path', 'm', args)
@@ -106,20 +105,15 @@ def move(args):
         print(src_path_bin)
         print(dst_path_bin)
 
-        if not force:
-            print(f"DEBUG: Do you want that {package} is going to replace the {dst}? (y/n)")
-            flag = input().lower()
-            if flag=="y":
-                shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
-                shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
-                keep_latest_config_files(src_path_config, dst_path_config)
-            elif flag!="y":
-                print("ERROR: Invalid input")
-                exit(2)
-        else:
+        print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)")
+        flag = input().lower()
+        if flag=="y":
             shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
             shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
             keep_latest_config_files(src_path_config, dst_path_config)
+        elif flag!="y":
+            print("ERROR: Invalid input")
+            exit(2)
     else:
         print(f"ERROR: {dst_path} doesn't exists!")
         exit(-1)
@@ -136,7 +130,6 @@ def main():
     subparsers = parser.add_subparsers(required=True)
 
     parser_move = subparsers.add_parser('move', help ='Move the ros node to the file system')
-    parser_move.add_argument("-f", help='Do not ask for confirmation', action='store_true')
     parser_move.add_argument('package', type=str, help='Name of the package to move')
     parser_move.add_argument('src_path', type=str, help='Absolute path of development directory (directory that CONTAINS src)')
     parser_move.add_argument('dst_path', type=str, nargs='?', default=None, help='Path of the target storage (if already known)')
