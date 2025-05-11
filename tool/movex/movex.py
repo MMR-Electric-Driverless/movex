@@ -125,8 +125,11 @@ def move(args):
         exit(-1)
 
 def invoke_build(args):
-    build(args.src_path, args.package)
-
+    try:
+        build(args.src_path, args.package)
+    except ... as e:
+        print(e)
+        print('Did you run "docker run --privileged --rm tonistiigi/binfmt --install all" before building? huh?')
 
 def main():
     parser = argparse.ArgumentParser(prog='movex')
