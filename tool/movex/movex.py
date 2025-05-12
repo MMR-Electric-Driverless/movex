@@ -124,7 +124,7 @@ def move(args):
 def invoke_build(args):
     try:
         build(args.src_path, args.package)
-    except ... as e:
+    except Exception as e:
         print(e)
         print('Did you run "docker run --privileged --rm tonistiigi/binfmt --install all" before building? huh?')
 
