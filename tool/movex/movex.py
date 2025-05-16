@@ -87,7 +87,7 @@ def expand(args):
 def move(args):
     package = args.package
     src_path = args.src_path
-
+    
     print(f"Move no longer compiles nodes before moving them... have you compiled {package}...")
     dst = check_if_argument_is_passed('dst_path', 'm', args)
     dst_path = os.path.join(dst, "usr")
@@ -125,8 +125,11 @@ def invoke_build(args):
     try:
         build(args.src_path, args.package)
     except Exception as e:
-        print(e)
-        print('Did you run "docker run --privileged --rm tonistiigi/binfmt --install all" before building? huh?')
+        print(e, '\n\nDid you run "docker run --privileged --rm tonistiigi/binfmt --install all" before building? huh?')
+
+def invoke_move(args):
+    try: move(args)
+    except (PermissionError, shutil.Error) as e: print(e, "\n\nMaybe u need to run as superuser. Is your disk mounted in /mnt? Eh?")
 
 def main():
     parser = argparse.ArgumentParser(prog='movex')
@@ -136,7 +139,7 @@ def main():
     parser_move.add_argument('package', type=str, help='Name of the package to move')
     parser_move.add_argument('src_path', type=str, help='Absolute path of development directory (directory that CONTAINS src)')
     parser_move.add_argument('dst_path', type=str, nargs='?', default=None, help='Path of the target storage (if already known)')
-    parser_move.set_defaults(func=move)
+    parser_move.set_defaults(func=invoke_move)
 
     parser_expand = subparsers.add_parser('expand', help='expand the partition to maximize the device size')
     parser_expand.add_argument('dev_path', nargs='?', default=None)
