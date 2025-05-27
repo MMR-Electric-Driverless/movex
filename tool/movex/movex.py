@@ -112,8 +112,10 @@ def move(args):
         flag = input().lower()
         if flag=="y":
             shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
-            shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
-            copy_config(src_path_config, dst_path_config)
+            if os.path.exists(src_path_launch) and os.path.isdir(src_path_launch):
+                shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
+            if os.path.exists(src_path_config) and os.path.isdir(src_path_config):
+                copy_config(src_path_config, dst_path_config)
         elif flag!="y":
             print("ERROR: Invalid input")
             exit(2)
