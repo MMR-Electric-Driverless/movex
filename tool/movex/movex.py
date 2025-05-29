@@ -121,8 +121,10 @@ def move(args):
         exit(-1)
 
 def invoke_build(args):
+    src_path = os.path.abspath(args.src_path)
+    
     try:
-        build(args.src_path, args.package)
+        build(src_path, args.package)
     except Exception as e:
         print(e, '\n\nDid you run "docker run --privileged --rm tonistiigi/binfmt --install all" before building? huh?')
 
