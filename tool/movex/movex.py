@@ -39,20 +39,19 @@ def choose_device(specifier):
 
     print(f"CONFIRM: Do you want to select the partition '{device[0]}'? (y/n)", end=' ', flush=True)
     flag=input().lower()
-    if flag=="y":
-        print(f"You have selected the device '{device[0]}'")
-        return device[index]
-    elif flag!="n":
-        exit(2)
+
+    if flag != "y" and flag != "Y": exit(2)
+
+    print(f"You have selected the device '{device[0]}'")
+    return device[index]
 
 
 def check_if_path_is_passed(args, specifier):
     path = args.dst_path
     if path is None or not(os.path.exists(path)):
         device = choose_device(specifier)
-    else:
-        if os.path.exists(path):
-            device = path
+    elif os.path.exists(path):
+        device = path
 
     return device
 
@@ -92,33 +91,37 @@ def move(args):
     dst = check_if_path_is_passed(args, 'm')
     dst_path = os.path.join(dst, "usr")
 
-    if (os.path.exists(dst_path)):
-        src_path_config = os.path.join(src_path, "install_arm64", package, "share", package, "config")
-        src_path_launch = os.path.join(src_path, "install_arm64", package, "share", package, "launch")
-        src_path_bin = os.path.join(src_path, BUILD_BASE, package)
-
-        dst_path_config = os.path.join(dst_path, "share", package, "config")
-
-        dst_path_launch = os.path.join(dst_path, "share", package, "launch")
-        dst_path_bin = os.path.join(dst_path, "lib", package)
-
-        print(src_path_bin)
-        print(dst_path_bin)
-
-        print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)", end=' ', flush=True)
-        flag = input().lower()
-        if flag=="y":
-            shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
-            if os.path.exists(src_path_launch) and os.path.isdir(src_path_launch):
-                shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
-            if os.path.exists(src_path_config) and os.path.isdir(src_path_config):
-                copy_config(src_path_config, dst_path_config)
-        elif flag!="y":
-            print("ERROR: Invalid input")
-            exit(2)
-    else:
+    if not os.path.exists(dst_path):
         print(f"ERROR: {dst_path} doesn't exists!")
         exit(-1)
+
+    src_path_config = os.path.join(src_path, "install_arm64", package, "share", package, "config")
+    src_path_launch = os.path.join(src_path, "install_arm64", package, "share", package, "launch")
+    src_path_bin = os.path.join(src_path, BUILD_BASE, package)
+
+    dst_path_config = os.path.join(dst_path, "share", package, "config")
+
+    dst_path_launch = os.path.join(dst_path, "share", package, "launch")
+    dst_path_bin = os.path.join(dst_path, "lib", package)
+
+    print(src_path_bin)
+    print(dst_path_bin)
+
+    print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)", end=' ', flush=True)
+    flag = input().lower()
+    
+    if flag != "y" and flag != "Y":
+        print("ERROR: Invalid input")
+        exit(2)
+
+    shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
+
+    if os.path.exists(src_path_launch) and os.path.isdir(src_path_launch):
+        shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
+    
+    if os.path.exists(src_path_config) and os.path.isdir(src_path_config):
+        copy_config(src_path_config, dst_path_config)
+
 
 def invoke_build(args):
     src_path = os.path.abspath(args.src_path)
