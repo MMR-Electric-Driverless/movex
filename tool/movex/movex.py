@@ -46,7 +46,7 @@ def choose_device(specifier):
         exit(2)
 
 
-def check_if_argument_is_passed(path, specifier, args):
+def check_if_path_is_passed(args, specifier):
     path = args.dst_path
     if path is None or not(os.path.exists(path)):
         device = choose_device(specifier)
@@ -77,7 +77,7 @@ def copy_config(src_dir, dst_dir):
         print(f"[DEBUG] Copyied src-only files: {left_file}")                        
 
 def expand(args): 
-    device = check_if_argument_is_passed('dev_path', 'n', args)
+    device = check_if_path_is_passed(args, 'n')
 
     subprocess.run(['umount', device])
     subprocess.run(['sudo', 'e2fsck', '-f', device])
@@ -89,7 +89,7 @@ def move(args):
     src_path = args.src_path
     
     print(f"Move no longer compiles nodes before moving them... have you compiled {package}...")
-    dst = check_if_argument_is_passed('dst_path', 'm', args)
+    dst = check_if_path_is_passed(args, 'm')
     dst_path = os.path.join(dst, "usr")
 
     if (os.path.exists(dst_path)):
@@ -152,9 +152,7 @@ def main():
     parser_build.add_argument('package', type=str, help='Name of the package to move')
     parser_build.set_defaults(func=invoke_build)
     
-    
     args = parser.parse_args()
-    #print(args)
     args.func(args)
 
 
