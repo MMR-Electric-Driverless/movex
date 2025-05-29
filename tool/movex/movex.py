@@ -93,9 +93,6 @@ def move(args):
     dst_path = os.path.join(dst, "usr")
 
     if (os.path.exists(dst_path)):
-        output = subprocess.run(['find',  src_path,  '-name', package], stdout=subprocess.PIPE)
-        results = output.stdout.decode('utf-8').split('\n')
-        
         src_path_config = os.path.join(src_path, "install_arm64", package, "share", package, "config")
         src_path_launch = os.path.join(src_path, "install_arm64", package, "share", package, "launch")
         src_path_bin = os.path.join(src_path, BUILD_BASE, package)
