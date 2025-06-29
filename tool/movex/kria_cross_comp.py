@@ -72,9 +72,11 @@ class BuildDisposableContainer(DisposableContainer):
 def build(src_folder, package):
   with BuildDisposableContainer(src_folder) as container:
     cmd = "/bin/bash -c \"source /opt/ros/humble/setup.bash && {command}\""
+    cmd0 = cmd.format(command="sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg")
     cmd1 = cmd.format(command="rosdep install --from-paths src --rosdistro humble --ignore-src -y --skip-keys 'fastcdr rti-connext-dds-6.0.1 urdfdom_headers' -r")
     cmd2 = cmd.format(command=f"colcon build --continue-on-error --build-base build_arm64 --install-base install_arm64 --parallel-workers 8 --packages-up-to {package}")
     
+    container.run_async(cmd0)
     container.run_async("apt update")
     container.run_async(cmd1)
     container.run_async(cmd2)
