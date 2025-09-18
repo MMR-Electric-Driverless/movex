@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import shutil
 import argparse
 import subprocess
@@ -103,9 +104,34 @@ def move(args):
 
     dst_path_launch = os.path.join(dst_path, "share", package, "launch")
     dst_path_bin = os.path.join(dst_path, "lib", package)
+    
+    # For each package in src_path/install_arm64/ look inside the package for files that match the following regexs
+    # <package_name>/lib/lib<package_name>__rosidl_typesupport_cpp.so
+    # <package_name>/lib/lib<package_name>__rosidl_typesupport_fastrtps_cpp.so
+    # <package_name>/lib/lib<package_name>__rosidl_typesupport_introspection_cpp.so
+    # these files will be copied on the destination under /usr/lib
+    
+    interface_files = []
+    
+    patterns = [
+        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_cpp\.so$"),
+        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_fastrtps_cpp\.so$"),
+        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_introspection_cpp\.so$")
+    ]
+    
+    for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, "install_arm64")):
+        for file in files:
+            filepath = os.path.join(current_dir, file)
+            for pattern in patterns:
+                if pattern.match(filepath):
+                    interface_files.append(filepath)
 
     print(src_path_bin)
     print(dst_path_bin)
+    print("interface files found:")
+    for file in interface_files:
+        print(file)
+
 
     print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)", end=' ', flush=True)
     flag = input().lower()
@@ -121,6 +147,13 @@ def move(args):
     
     if os.path.exists(src_path_config) and os.path.isdir(src_path_config):
         copy_config(src_path_config, dst_path_config)
+        
+    dst_path_lib = os.path.join(dst_path, "lib")
+
+    for src_file in interface_files:
+        dst_file = os.path.join(dst_path_lib, os.path.basename(src_file))
+        shutil.copy(src_file, dst_file)
+        print(f"Copied {src_file} -> {dst_file}")
 
 
 def invoke_build(args):
