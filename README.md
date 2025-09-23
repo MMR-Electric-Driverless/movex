@@ -8,7 +8,7 @@ pip install -r requirements.txt
 
 ## Docker Configuration
 
-When we compile a ROS2 node from our machines, this node will be compiled for the architecture of the pc used (e.g. x86, ...), while we want the node to be compiled for arm64 (or aarch64) to stay consistent with the Kria architecture. **IMPORTANT**: run the docker image before to use kria-movex.
+When we compile a ROS2 node from our machines, this node will be compiled for the architecture of the pc used (e.g. x86, ...), while we want the node to be compiled for arm64 (or aarch64) to stay consistent with the Kria architecture. **IMPORTANT**: run the docker image before using movex.
 
 ### Compose-based procedure (suggested)
 
