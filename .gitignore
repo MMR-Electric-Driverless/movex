@@ -7,4 +7,6 @@ install_arm64/
 log/
 venv/
 __pycache__/
-
+dist/
+*egg*
+*wheel*
