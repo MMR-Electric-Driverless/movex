@@ -1,6 +1,6 @@
 [project]
 name = "movex"
-version = "1.0"
+version = "1.1"
 authors = [{ name = "MMR E-Driverless Team" }]
 description = "A command-line tool to deal with Kria's clumsiness."
 readme = "README.md"

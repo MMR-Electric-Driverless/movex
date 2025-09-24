@@ -41,6 +41,8 @@ Download image from Docker Hub:
 ```
 
 ### Compose Based Procedure
+Clone [mmr-cross-compilation](https://github.com/doclorenzo/mmr-cross-compilation) repository.
+
 Run the docker image from compose file:
 ```bash
 SRC_PATH=<mmr-kria-drive-path> docker compose run --rm mmr-cross-compile-container
@@ -49,6 +51,8 @@ SRC_PATH=<mmr-kria-drive-path> docker compose run --rm mmr-cross-compile-contain
 Set `mmr-kria-drive-path` to the absolute path of the `mmr-kria-drive` source code
 
 ### Dockerfile Procedure
+Clone [mmr-cross-compilation](https://github.com/doclorenzo/mmr-cross-compilation) repository.
+
 If you are not willing to use the compose-based procedure, you can always opt for the manual procedure which involves build and interactive execution of the image.
 
 1. **Build container**
