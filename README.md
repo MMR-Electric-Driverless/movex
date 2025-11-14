@@ -91,3 +91,7 @@ If you are here, we both know that something went wrong... don't give up and see
     sudo usermod -aG docker $USER
    ```
    then reboot your system.
+
+3. **Problem on expand on Ubuntu 22.04: older version of e2fsck and resize2fs**
+
+    Download and compile from the [e2fsprogs](https://github.com/tytso/e2fsprogs) repository the newer versione of e2fsck and resize2fs.
