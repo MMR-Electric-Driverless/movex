@@ -179,7 +179,7 @@ def main():
     parser_move.set_defaults(func=invoke_move)
 
     parser_expand = subparsers.add_parser('expand', help='expand the partition to maximize the device size')
-    parser_expand.add_argument('dev_path', nargs='?', default=None)
+    parser_expand.add_argument('dst_path', nargs='?', default=None)
     parser_expand.set_defaults(func=expand)
 
     parser_build = subparsers.add_parser('build', help='Cross compile for arm64 target')
