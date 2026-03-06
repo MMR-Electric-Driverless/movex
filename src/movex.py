@@ -9,10 +9,6 @@ from simple_term_menu import TerminalMenu
 from kria_cross_comp import build
 from config import *
 
-# expand:
-# IMPORTANT: upgrade e2fsck -> https://askubuntu.com/questions/1497523/feature-c12-e2fsck-get-a-newer-version-of-e2fsck
-# growpart -> sudo apt install cloud-guest-utils
-
 #       * launch -> /usr/share/<node_name>/launch/<node_name>_launch.py
 #       * yaml   -> /usr/share/<node_name>/config/<node_name>_conf.yaml
 #       * bin    -> /usr/lib/<node_name>/
@@ -96,14 +92,15 @@ def move(args):
         print(f"ERROR: {dst_path} doesn't exists!")
         exit(-1)
 
-    src_path_config = os.path.join(src_path, "install_arm64", package, "share", package, "config")
-    src_path_launch = os.path.join(src_path, "install_arm64", package, "share", package, "launch")
+    src_path_config = os.path.join(src_path, INSTALL_BASE, package, "share", package, "config")
+    src_path_launch = os.path.join(src_path, INSTALL_BASE, package, "share", package, "launch")
     src_path_bin = os.path.join(src_path, BUILD_BASE, package)
 
     dst_path_config = os.path.join(dst_path, "share", package, "config")
-
     dst_path_launch = os.path.join(dst_path, "share", package, "launch")
+    dst_path_msgs = os.path.join(dst_path, "share", package)
     dst_path_bin = os.path.join(dst_path, "lib", package)
+
     
     # For each package in src_path/install_arm64/ look inside the package for files that match the following regexs
     # <package_name>/lib/lib<package_name>__rosidl_typesupport_cpp.so
@@ -116,21 +113,38 @@ def move(args):
     patterns = [
         re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_cpp\.so$"),
         re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_fastrtps_cpp\.so$"),
-        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_introspection_cpp\.so$")
+        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_introspection_cpp\.so$"),
+        re.compile(r".*/([^/]+)/share/\1/.*/[^/]+\.(?:msg|idl)$")
     ]
+
+    # If we are moving a custom message, we need to move also the message itself that
+    # can be found under:
+    # <package_name>/share/<package_name>/msg/*{msg,idl} -> standard folder
+    # <package_name>/share/<package_name>/<folder_name>/*{msg,idl}
+    # these files will be copied on the destination under /usr/share
+
+    # We don't want that the same path to a folder is duplicated
+    msg_folders = set()
     
-    for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, "install_arm64")):
+    for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, INSTALL_BASE)):
         for file in files:
             filepath = os.path.join(current_dir, file)
             for pattern in patterns:
                 if pattern.match(filepath):
-                    interface_files.append(filepath)
+                    if filepath.endswith('.so'):
+                        interface_files.append(filepath)
+                    else:
+                        msg_folders.add(current_dir)
 
     print(src_path_bin)
     print(dst_path_bin)
     print("interface files found:")
     for file in interface_files:
         print(file)
+
+    print("custom messages folder:")
+    for folder in msg_folders:
+        print(folder)
 
 
     print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)", end=' ', flush=True)
@@ -154,6 +168,11 @@ def move(args):
         dst_file = os.path.join(dst_path_lib, os.path.basename(src_file))
         shutil.copy(src_file, dst_file)
         print(f"Copied {src_file} -> {dst_file}")
+
+    for src_folder in msg_folders:
+        dst_folder = os.path.join(dst_path_msgs, os.path.basename(src_folder))
+        shutil.copytree(src_folder, dst_folder, dirs_exist_ok=True)
+        print(f"Copied {src_folder} -> {dst_folder}")
 
 
 def invoke_build(args):
