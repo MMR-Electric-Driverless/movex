@@ -96,55 +96,57 @@ def move(args):
     src_path_launch = os.path.join(src_path, INSTALL_BASE, package, "share", package, "launch")
     src_path_bin = os.path.join(src_path, BUILD_BASE, package)
 
+    dst_path_msgs = os.path.join(dst_path, "share", package)
     dst_path_config = os.path.join(dst_path, "share", package, "config")
     dst_path_launch = os.path.join(dst_path, "share", package, "launch")
-    dst_path_msgs = os.path.join(dst_path, "share", package)
+    dst_path_lib = os.path.join(dst_path, "lib")
     dst_path_bin = os.path.join(dst_path, "lib", package)
 
+    # TO DO: check the correctness of the passed files
+    # # For each package in src_path/install_arm64/ look inside the package for files that match the following regexs
+    # # <package_name>/lib/lib<package_name>__rosidl_typesupport_*.{c,cpp}.so
+    # # <package_name>/lib/lib<package_name>__rosidl_typesupport_fastrtps_*.{c,cpp}.so
+    # # <package_name>/lib/lib<package_name>__rosidl_typesupport_introspection_*.{c,cpp}.so
+    # # <package_name>/lib/lib<package_name>__rosidl_typesupport_generator_*.{c,py}.so
+    # # these files will be copied on the destination under /usr/lib
     
-    # For each package in src_path/install_arm64/ look inside the package for files that match the following regexs
-    # <package_name>/lib/lib<package_name>__rosidl_typesupport_cpp.so
-    # <package_name>/lib/lib<package_name>__rosidl_typesupport_fastrtps_cpp.so
-    # <package_name>/lib/lib<package_name>__rosidl_typesupport_introspection_cpp.so
-    # these files will be copied on the destination under /usr/lib
+    # interface_files = []
     
-    interface_files = []
+    # interface_patterns = [
+    #     re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_(?:c|cpp)\.so$"),
+    #     re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_fastrtps_(?:c|cpp)\.so$"),
+    #     re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_introspection_(?:c|cpp)\.so$"),
+    #     re.compile(r".*/([^/]+)/lib/lib\1__rosidl_generator_(?:c|py)\.so$"),
+    #     re.compile(r".*/([^/]+)/share/\1/.*/[^/]+\.(?:msg|idl)$")
+    # ]
     
-    patterns = [
-        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_cpp\.so$"),
-        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_fastrtps_cpp\.so$"),
-        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_introspection_cpp\.so$"),
-        re.compile(r".*/([^/]+)/share/\1/.*/[^/]+\.(?:msg|idl)$")
-    ]
+    # # If we are moving a custom message, we need to move also the message itself that
+    # # can be found under:
+    # # <package_name>/share/<package_name>/msg/*.{msg,idl} -> standard folder
+    # # <package_name>/share/<package_name>/<folder_name>/*.{msg,idl}
+    # # these files will be copied on the destination under /usr/share
 
-    # If we are moving a custom message, we need to move also the message itself that
-    # can be found under:
-    # <package_name>/share/<package_name>/msg/*{msg,idl} -> standard folder
-    # <package_name>/share/<package_name>/<folder_name>/*{msg,idl}
-    # these files will be copied on the destination under /usr/share
-
-    # We don't want that the same path to a folder is duplicated
-    msg_folders = set()
+    # # We don't want that the same path to a folder is duplicated
+    # msg_folders = set()
     
-    for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, INSTALL_BASE)):
-        for file in files:
-            filepath = os.path.join(current_dir, file)
-            for pattern in patterns:
-                if pattern.match(filepath):
-                    if filepath.endswith('.so'):
-                        interface_files.append(filepath)
-                    else:
-                        msg_folders.add(current_dir)
+    # for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, INSTALL_BASE)):
+    #     for file in files:
+    #         filepath = os.path.join(current_dir, file)
+    #         if any(p.match(filepath) for p in interface_patterns):
+    #             if filepath.endswith('.so'):
+    #                 interface_files.append(filepath)
+    #             else:
+    #                 msg_folders.add(current_dir)
 
     print(src_path_bin)
     print(dst_path_bin)
-    print("interface files found:")
-    for file in interface_files:
-        print(file)
+    # print("interface files found:")
+    # for file in interface_files:
+    #     print(file)
 
-    print("custom messages folder:")
-    for folder in msg_folders:
-        print(folder)
+    # print("custom messages found:")
+    # for folder in msg_folders:
+    #     print(folder)
 
 
     print(f"DEBUG: Do you want to replace {package} in {dst}? (y/n)", end=' ', flush=True)
@@ -154,25 +156,38 @@ def move(args):
         print("ERROR: Invalid input")
         exit(2)
 
-    shutil.copytree(src_path_bin, dst_path_bin, dirs_exist_ok=True)
-
-    if os.path.exists(src_path_launch) and os.path.isdir(src_path_launch):
-        shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
-    
     if os.path.exists(src_path_config) and os.path.isdir(src_path_config):
         copy_config(src_path_config, dst_path_config)
+    
+    if os.path.exists(src_path_launch) and os.path.isdir(src_path_launch):
+        shutil.copytree(src_path_launch, dst_path_launch, dirs_exist_ok=True)
+
+    # Passing only the binary file to /usr/lib/<package_name>
+    if os.path.exists(src_path_bin) and os.path.isdir(src_path_bin):
+        for p in os.listdir(src_path_bin):
+            if p.endswith("_node"):
+                src_bin_file = os.path.join(src_path_bin, p)
+                dst_bin_file = os.path.join(dst_path_bin, p)
+        # print(src_bin_file)
+        # print(dst_bin_file)
+        if os.path.isfile(src_bin_file) and os.path.isfile(dst_bin_file):
+            shutil.copy(src_bin_file, dst_bin_file)
+            print(f"Copied {src_bin_file} -> {dst_bin_file}")
         
-    dst_path_lib = os.path.join(dst_path, "lib")
+    # TO DO:    the move operation itself of the custom msgs seems ok 
+    #           but it's necessary to understand the other files to 
+    #           pass under the folder .../python<versione>/dist-packages
+    #           
+    # for src_file in interface_files:
+    #     dst_file = os.path.join(dst_path_lib, os.path.basename(src_file))
+    #     # shutil.copy(src_file, dst_file)
+    #     print(f"Copied {src_file} -> {dst_file}")
 
-    for src_file in interface_files:
-        dst_file = os.path.join(dst_path_lib, os.path.basename(src_file))
-        shutil.copy(src_file, dst_file)
-        print(f"Copied {src_file} -> {dst_file}")
-
-    for src_folder in msg_folders:
-        dst_folder = os.path.join(dst_path_msgs, os.path.basename(src_folder))
-        shutil.copytree(src_folder, dst_folder, dirs_exist_ok=True)
-        print(f"Copied {src_folder} -> {dst_folder}")
+    # for src_folder in msg_folders:
+    #     dst_folder = os.path.join(dst_path_msgs, os.path.basename(src_folder))
+    #     # shutil.copytree(src_folder, dst_folder, dirs_exist_ok=True)
+    #     copy_config(src_folder, dst_folder)
+    #     # print(f"Copied {src_folder} -> {dst_folder}")
 
 
 def invoke_build(args):
