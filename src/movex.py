@@ -110,7 +110,7 @@ def move(args):
     # # <package_name>/lib/lib<package_name>__rosidl_typesupport_generator_*.{c,py}.so
     # # these files will be copied on the destination under /usr/lib
     
-    # interface_files = []
+    interface_files = []
     
     # interface_patterns = [
     #     re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_(?:c|cpp)\.so$"),
@@ -119,6 +119,12 @@ def move(args):
     #     re.compile(r".*/([^/]+)/lib/lib\1__rosidl_generator_(?:c|py)\.so$"),
     #     re.compile(r".*/([^/]+)/share/\1/.*/[^/]+\.(?:msg|idl)$")
     # ]
+
+    interface_patterns = [
+        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_cpp\.so$"),
+        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_fastrtps_cpp\.so$"),
+        re.compile(r".*/([^/]+)/lib/lib\1__rosidl_typesupport_introspection_cpp\.so$")
+    ]
     
     # # If we are moving a custom message, we need to move also the message itself that
     # # can be found under:
@@ -129,20 +135,20 @@ def move(args):
     # # We don't want that the same path to a folder is duplicated
     # msg_folders = set()
     
-    # for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, INSTALL_BASE)):
-    #     for file in files:
-    #         filepath = os.path.join(current_dir, file)
-    #         if any(p.match(filepath) for p in interface_patterns):
-    #             if filepath.endswith('.so'):
-    #                 interface_files.append(filepath)
-    #             else:
-    #                 msg_folders.add(current_dir)
+    for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, INSTALL_BASE)):
+        for file in files:
+            filepath = os.path.join(current_dir, file)
+            if any(p.match(filepath) for p in interface_patterns):
+                if filepath.endswith('.so'):
+                    interface_files.append(filepath)
+                # else:
+                #     msg_folders.add(current_dir)
 
     print(src_path_bin)
     print(dst_path_bin)
-    # print("interface files found:")
-    # for file in interface_files:
-    #     print(file)
+    print("interface files found:")
+    for file in interface_files:
+        print(file)
 
     # print("custom messages found:")
     # for folder in msg_folders:
@@ -178,10 +184,10 @@ def move(args):
     #           but it's necessary to understand the other files to 
     #           pass under the folder .../python<versione>/dist-packages
     #           
-    # for src_file in interface_files:
-    #     dst_file = os.path.join(dst_path_lib, os.path.basename(src_file))
-    #     # shutil.copy(src_file, dst_file)
-    #     print(f"Copied {src_file} -> {dst_file}")
+    for src_file in interface_files:
+        dst_file = os.path.join(dst_path_lib, os.path.basename(src_file))
+        shutil.copy(src_file, dst_file)
+        print(f"Copied {src_file} -> {dst_file}")
 
     # for src_folder in msg_folders:
     #     dst_folder = os.path.join(dst_path_msgs, os.path.basename(src_folder))
