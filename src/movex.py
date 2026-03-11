@@ -138,11 +138,14 @@ def move(args):
     for current_dir, sub_dirs, files in os.walk(os.path.join(src_path, INSTALL_BASE)):
         for file in files:
             filepath = os.path.join(current_dir, file)
-            if any(p.match(filepath) for p in interface_patterns):
-                if filepath.endswith('.so'):
+            for pattern in interface_patterns:
+                if pattern.match(filepath):
                     interface_files.append(filepath)
-                # else:
-                #     msg_folders.add(current_dir)
+            # if any(p.match(filepath) for p in interface_patterns):
+            #     if filepath.endswith('.so'):
+            #         interface_files.append(filepath)
+            #     else:
+            #         msg_folders.add(current_dir)
 
     print(src_path_bin)
     print(dst_path_bin)
